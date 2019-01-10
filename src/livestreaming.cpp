@@ -19,7 +19,7 @@ using std::string;
 #include <time.h>
 
 LiveStreaming::LiveStreaming(const Service &service, int socketfd,
-		const StreamingParameters &, const ConfigMap &config_map)
+		string webauth, const StreamingParameters &, const ConfigMap &config_map)
 {
 	PidMap::const_iterator it;
 	bool			webifrequest_ok;
@@ -40,13 +40,16 @@ LiveStreaming::LiveStreaming(const Service &service, int socketfd,
 	if(!service.is_valid())
 		throw(http_trap("LiveStreaming: invalid service", 404, "Not found, service not found"));
 
-	WebifRequest webifrequest(service, config_map);
+	WebifRequest webifrequest(service, webauth, config_map);
 
 	for(webifrequest_ok = false; (time(0) - timeout) < 60; )
 	{
 		usleep(100000);
 
 		webifrequest.poll();
+
+		if (webifrequest.get_statuscode() != "200")
+			throw(http_trap("Webrequest failed", stoi(webifrequest.get_statuscode()), "Streaming Request failed"));
 
 		pids = webifrequest.get_pids();
 

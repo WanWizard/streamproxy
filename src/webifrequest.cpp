@@ -35,7 +35,7 @@ static const struct addrinfo gai_webif_hints =
 	.ai_next        = 0,
 };
 
-WebifRequest::WebifRequest(const Service &service_in, const ConfigMap &config_map_in)
+WebifRequest::WebifRequest(const Service &service_in, string webauth, const ConfigMap &config_map_in)
 	:
 		service(service_in), config_map(config_map_in)
 {
@@ -74,7 +74,12 @@ WebifRequest::WebifRequest(const Service &service_in, const ConfigMap &config_ma
 
 	freeaddrinfo(gai_webif_address);
 
-	request = string("GET /web/stream?StreamService=") + service.service_string() + " HTTP/1.0\r\n\r\n";
+	request = string("GET /web/stream?StreamService=") + service.service_string() + " HTTP/1.0\r\n";
+	if (webauth != "")
+	{
+		request.append(string("Authorization: Basic ") + webauth + "\r\n");
+	}
+	request.append("\r\n");
 
 	Util::vlog("WebifRequest: send request to webif: \"%s\"", request.c_str());
 
@@ -123,6 +128,12 @@ void WebifRequest::poll()
 	buffer[bytes_read] = '\0';
 	reply += buffer;
 	free(buffer);
+
+	if((idx = reply.find("HTTP/1")) != string::npos)
+	{
+		statuscode = reply.substr(idx + 9, 3);
+		Util::vlog("WebifRequest: returned HTTP status %s", statuscode.c_str());
+	}
 
 	if((sol = reply.rfind('+')) == string::npos)
 		return;
@@ -185,4 +196,9 @@ PidMap WebifRequest::get_pids() const
 int WebifRequest::get_demuxer_id() const
 {
 	return(demuxer_id);
+}
+
+string WebifRequest::get_statuscode() const
+{
+	return(statuscode);
 }

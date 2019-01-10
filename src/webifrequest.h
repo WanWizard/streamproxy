@@ -20,18 +20,20 @@ class WebifRequest
 		std::string			reply;
 		PidMap				pids;
 		int					demuxer_id;
+		std::string			statuscode = std::string("200");
 
 		WebifRequest();
 		WebifRequest(const WebifRequest &);
 
 	public:
 
-		WebifRequest(const Service &service, const ConfigMap &config_map);
+		WebifRequest(const Service &service, std::string webauth, const ConfigMap &config_map);
 		~WebifRequest();
 
-		void	poll();
-		PidMap	get_pids()				const;
-		int		get_demuxer_id()		const;
+		void		poll();
+		PidMap		get_pids()				const;
+		int			get_demuxer_id()		const;
+		std::string	get_statuscode()		const;
 };
 
 #endif
